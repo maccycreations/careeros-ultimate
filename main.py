@@ -1,27 +1,41 @@
 """CareerX / Maccy Hub - native Python career acceleration hub."""
 from nicegui import ui
+
 from models import init_db
+from services.auth import get_current_user, get_or_create_demo_user
 from services.sync import sync_pending
-from views.dashboard import dashboard_page
-from views.skills import skills_page
-from views.career import career_page
-from views.roadmap import roadmap_page
-from views.resume import resume_page
-from views.jobs import jobs_page
-from views.applications import applications_page
 from views.ai_hub import ai_hub_page
+from views.applications import applications_page
+from views.auth import auth_page
+from views.career import career_page
+from views.dashboard import dashboard_page
+from views.jobs import jobs_page
+from views.resume import resume_page
+from views.roadmap import roadmap_page
 from views.settings import settings_page
+from views.skills import skills_page
 
 init_db()
 
 
 @ui.page('/')
 def index():
+    user = get_current_user()
+    if user is None:
+        user = get_or_create_demo_user()
+        from services.auth import set_current_user
+        set_current_user(user)
+
+    if user is None:
+        content = ui.column().classes('w-full max-w-xl mx-auto p-8')
+        auth_page(content)
+        return
+
     ui.colors(primary='#6750A4', secondary='#625B71', accent='#7D5260')
 
     with ui.header().classes('items-center justify-between px-6 bg-primary text-white'):
         ui.label('CareerX / Maccy Hub').classes('text-xl font-bold')
-        ui.label('SAKET YADAV • MACCY CREATIONS').classes('text-xs opacity-80')
+        ui.label(f'{user.name} • {user.email}').classes('text-xs opacity-90')
 
     with ui.left_drawer(value=True).classes('bg-slate-50'):
         ui.label('Career acceleration').classes('text-lg font-semibold p-4')
@@ -36,6 +50,7 @@ def index():
             ('AI hub', ai_hub_page),
             ('Profile & settings', settings_page),
         ]
+
         content = ui.column().classes('w-full max-w-7xl mx-auto p-6')
         for label, page in pages:
             ui.button(label, on_click=lambda p=page, c=content: render_page(c, p)).props('flat align=left').classes('w-full')

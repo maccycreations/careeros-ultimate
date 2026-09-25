@@ -18,8 +18,17 @@ def utcnow():
     return datetime.now(timezone.utc)
 
 
+class User(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    email: str = Field(index=True, unique=True)
+    name: str = ""
+    password_hash: str
+    created_at: datetime = Field(default_factory=utcnow)
+
+
 class Skill(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: Optional[int] = Field(default=None, index=True)
     name: str = Field(index=True)
     category: str
     description: str = ""
@@ -40,6 +49,7 @@ class Career(SQLModel, table=True):
 
 class Roadmap(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: Optional[int] = Field(default=None, index=True)
     goal: str
     steps: str
     status: str = "active"
@@ -62,6 +72,7 @@ class Job(SQLModel, table=True):
 
 class Application(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: Optional[int] = Field(default=None, index=True)
     job_id: Optional[int] = None
     company: str
     title: str
@@ -75,6 +86,7 @@ class Application(SQLModel, table=True):
 
 class Resume(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: Optional[int] = Field(default=None, index=True)
     name: str
     template: str
     content: str = ""
@@ -84,6 +96,7 @@ class Resume(SQLModel, table=True):
 
 class PendingSync(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: Optional[int] = Field(default=None, index=True)
     table_name: str
     record_id: str
     operation: str
@@ -94,10 +107,14 @@ class PendingSync(SQLModel, table=True):
 def init_db():
     SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
+        if not session.exec(select(User)).first():
+            from services.auth import create_user
+            create_user("demo@maccy.com", "Demo User", "careerx123")
+
         seeded_skills = {(row.name, row.category) for row in session.exec(select(Skill)).all()}
         for name, category in all_skills():
             if (name, category) not in seeded_skills:
-                session.add(Skill(name=name, category=category, proficiency=0))
+                session.add(Skill(name=name, category=category, proficiency=0, user_id=None))
 
         seeded_careers = {row.title for row in session.exec(select(Career)).all()}
         for title, level, skills in CAREER_PATHS:
@@ -118,6 +135,7 @@ def init_db():
 
 __all__ = [
     "engine",
+    "User",
     "Skill",
     "Career",
     "Roadmap",
