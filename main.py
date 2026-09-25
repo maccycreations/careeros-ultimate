@@ -18,6 +18,7 @@ init_db()
 @ui.page('/')
 def index():
     ui.colors(primary='#6750A4', secondary='#625B71', accent='#7D5260')
+
     with ui.header().classes('items-center justify-between px-6 bg-primary text-white'):
         ui.label('CareerX / Maccy Hub').classes('text-xl font-bold')
         ui.label('SAKET YADAV • MACCY CREATIONS').classes('text-xs opacity-80')
@@ -41,6 +42,7 @@ def index():
 
     content = ui.column().classes('w-full max-w-7xl mx-auto p-6')
     dashboard_page(content)
+
     with ui.footer().classes('justify-center'):
         ui.label('CareerX is offline-first. Configure Supabase and AI providers through environment variables.')
 

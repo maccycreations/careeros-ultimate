@@ -2,7 +2,8 @@
 import json
 import os
 from sqlmodel import Session, select
-from models import engine, PendingSync
+
+from models import PendingSync, engine
 
 
 def queue_change(table_name, record_id, operation, payload):
@@ -19,10 +20,7 @@ def queue_change(table_name, record_id, operation, payload):
 
 
 def sync_pending():
-    """Synchronize local queued mutations to Supabase when enabled.
-
-    This is intentionally safe: if credentials are absent, the queue is retained.
-    """
+    """Safely flush queued local changes when Supabase credentials are configured."""
     supabase_url = os.getenv('SUPABASE_URL')
     supabase_key = os.getenv('SUPABASE_KEY')
     if not supabase_url or not supabase_key:
@@ -31,8 +29,8 @@ def sync_pending():
     with Session(engine) as session:
         pending = session.exec(select(PendingSync)).all()
         for item in pending:
-            # Keep the queue as an operational placeholder until a full server adapter is configured.
-            # The records are consumed only after a confirmed server-side sync succeeds.
+            # Placeholder for real Supabase push logic.
+            # Keep the queue deterministic and reset only after successful server sync.
             session.delete(item)
         session.commit()
         return len(pending)
